@@ -83,11 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 	<meta name="description" content="Russell Thackston's personal website for IT 5233">
 	<meta name="author" content="Russell Thackston">
 	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/form.css">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 	<?php include 'include/header.php'; ?>
-
+	<div class="myForm">
 	<h2>Edit Profile</h2>
 	
 	<?php include 'include/messages.php'; ?>	
@@ -97,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 			<input type="hidden" name="userid" value="<?php echo $userid; ?>" />
 			<input type="text" name="username" id="username" placeholder="Pick a username" value="<?php echo $username; ?>" />
 			<br/>
-			<input type="password" name="password" id="password" placeholder="Enter a password" value="<?php echo $password; ?>" /> (optional)
+			<input type="password" name="password" id="password" placeholder="Enter a password  (optional)" value="<?php echo $password; ?>" />
 			<br/>
 			<input type="text" name="email" id="email" placeholder="Enter your email" size="40" value="<?php echo $email; ?>" />
 			<?php if ($loggedinuserid != $userid) { ?>
@@ -108,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 			<br/>
 			<input type="submit" value="Update profile" />
 		</form>
+	</div>
 	</div>
 	<?php include 'include/footer.php'; ?>
 	<script src="js/site.js"></script>

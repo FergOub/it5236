@@ -2,7 +2,7 @@
 
 // Import the application classes
 require_once('include/classes.php');
-
+echo "HELLO";
 // Create an instance of the Application class
 $app = new Application();
 $app->setup();
@@ -24,7 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	$password = $_POST['password'];
 	$email = $_POST['email'];
 	$registrationcode = $_POST['registrationcode'];
-
 	// Attempt to register the new user and capture the result flag
 	$result = $app->register($username, $password, $email, $registrationcode, $errors);
 
@@ -32,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if ($result == TRUE) {
 
 		// Redirect the user to the login page on success
-	    header("Location: login.php?register=success");
+	  header("Location: login.php?register=success");
 		exit();
 
 	}
@@ -49,17 +48,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	<meta name="description" content="Russell Thackston's personal website for IT 5233">
 	<meta name="author" content="Russell Thackston">
 	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/form.css"> <!-- TESTING OUT -->
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<!--1. Display Errors if any exists 
+<!--1. Display Errors if any exists
 	2. Display Registration form (sticky):  Username, Password, Question, and Answer -->
 <body>
 	<?php include 'include/header.php'; ?>
-	
+<div class="myForm">
 	<h2>Register</h2>
-	
+
 	<?php include('include/messages.php'); ?>
-		
+
 	<div>
 		<form action="register.php" method="post">
 			<input type="text" name="username" id="username" placeholder="Pick a username" value="<?php echo $username; ?>" />
@@ -74,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		</form>
 	</div>
 	<a href="login.php">Already a member?</a>
+</div>
 	<?php include 'include/footer.php'; ?>
 	<script src="js/site.js"></script>
 </body>

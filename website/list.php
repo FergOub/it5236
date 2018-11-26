@@ -1,5 +1,5 @@
 <?php
-	
+
 // Import the application classes
 require_once('include/classes.php');
 
@@ -16,7 +16,7 @@ $app->protectPage($errors);
 $name = "";
 
 // Attempt to obtain the list of things
-$things = $app->getThings($errors);
+$things = json_decode($app->getThings($errors));
 
 // Check for url flag indicating that there was a "no thing" error.
 if (isset($_GET["error"]) && $_GET["error"] == "nothing") {
@@ -27,14 +27,14 @@ if (isset($_GET["error"]) && $_GET["error"] == "nothing") {
 if (isset($_GET["newthing"]) && $_GET["newthing"] == "success") {
 	$message = "Thing successfully created.";
 }
-	
+
 // If someone is attempting to create a new thing, the process the request
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 	// Pull the title and thing text from the <form> POST
 	$name = $_POST['name'];
 	$attachment = $_FILES['attachment'];
-
+	var_dump($attachment);
 	// Attempt to create the new thing and capture the result flag
 	$result = $app->addThing($name, $attachment, $errors);
 
@@ -55,21 +55,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>russellthackston.me</title>
+	<title>My Sports Teams</title>
 	<meta name="description" content="Russell Thackston's personal website for IT 5233">
 	<meta name="author" content="Russell Thackston">
 	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/list.css">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<!--1. Display Errors if any exists 
+<!--1. Display Errors if any exists
 	2. If no errors display things -->
 <body>
 	<?php include 'include/header.php'; ?>
-	<h2>My Things</h2>
-	
+	<div class="thing-surround">
+	<h2>My Sports Teams</h2>
+
 	<?php include('include/messages.php'); ?>
-	
+
 	<div class="search">
 		<form action="list.php" method="post">
 			<label for="search">Filter:</label>
@@ -79,12 +81,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	</div>
 	<ul class="things">
 		<?php if (sizeof($things) == 0) { ?>
-		<li>No things found</li>
-		<?php } ?>
-		<?php foreach ($things as $thing) { ?>
+		<li>No sports teams found</li>
+		<?php } 
+        ?>
+		<?php foreach ($things->things as $thing) { 
+        ?>
 		<li>
-			<a href="thing.php?thingid=<?php echo $thing['thingid']; ?>"><?php echo $thing['thingname']; ?></a>
-			<span class="author"><?php echo $thing['thingcreated']; ?></span>
+			<a href="thing.php?thingid=<?php echo $thing->thingid; ?>"><?php echo $thing->thingname; ?></a>
+			<span class="author"><?php echo $thing->thingcreated; ?></span>
 		</li>
 		<?php } ?>
 
@@ -96,10 +100,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			<label for="attachment">Add an image, PDF, etc.</label>
 			<input id="attachment" name="attachment" type="file">
 			<br/>
-			<input type="submit" name="start" value="Create Thing" />
+			<input type="submit" name="start" value="Create Team" />
 			<input type="submit" name="cancel" value="Cancel" />
 		</form>
 	</div>
+
+</div>
 	<?php include 'include/footer.php'; ?>
 	<script src="js/site.js"></script>
 </body>
