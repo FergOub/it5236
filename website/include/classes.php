@@ -1,4 +1,4 @@
-<?php
+<?php 
 $dbh = null;
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -18,7 +18,7 @@ class Application {
 
         // Check to see if the client has a cookie called "debug" with a value of "true"
         // If it does, turn on error reporting
-        if ($_COOKIE['debug'] == "true") {
+        if ($_COOKIE['debug'] == "true" && isset($_COOKIE['debug'])) {
             ini_set('display_errors', 1);
             ini_set('display_startup_errors', 1);
             error_reporting(E_ALL);
@@ -57,7 +57,7 @@ class Application {
 
             $user = $this->getSessionUser($errors, TRUE);
             if ($user != NULL) {
-                $userid = $user->usersessionid;
+                $userid = $user['userid'];
             }
 
         }
@@ -88,7 +88,7 @@ class Application {
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
       $response  = curl_exec($ch);
       $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-      echo $response;
+      //echo $response;
      
       curl_close($ch);
       
@@ -161,7 +161,7 @@ class Application {
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
       $response  = curl_exec($ch);
       $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-      echo $response;
+      //echo $response;
       
       if ($response === FALSE) {
         $errors[] = "An unexpected failure occurred contacting the web service.";
@@ -398,7 +398,7 @@ class Application {
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
             // If the query did not run successfully, add an error message to the list
-            if ($result === FALSE) {
+            if ($httpCode === 500) {
 
                 $errors[] = "An unexpected error occurred";
                 $this->debug($stmt->errorInfo());
@@ -541,61 +541,54 @@ class Application {
 
     // Retrieves an existing session from the database for the specified user
     public function getSessionUser(&$errors, $suppressLog=FALSE) {
-
+        
         // Get the session id cookie from the browser
         $sessionid = NULL;
         $user = NULL;
-
+        
         // Check for a valid session ID
         if (isset($_COOKIE['sessionid'])) {
-
+            
             $sessionid = $_COOKIE['sessionid'];
             
-            $url = "https://z7ax7vyht3.execute-api.us-east-1.amazonaws.com/default/getsessionuser?sessionid=".$sessionid;
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array("x-api-key: CeNav9VIAS14a7KKu1tp42r9E7bxBVxM4RrD278Y"));
-            $response  = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            echo $response;
-
-            /*// Construct a SQL statement to perform the insert operation
+            // Connect to the database
+            $dbh = $this->getConnection();
+            
+            // Construct a SQL statement to perform the insert operation
             $sql = "SELECT usersessionid, usersessions.userid, email, username, usersessions.registrationcode, isadmin " .
                 "FROM usersessions " .
                 "LEFT JOIN users on usersessions.userid = users.userid " .
                 "WHERE usersessionid = :sessionid AND expires > now()";
-
+            
             // Run the SQL select and capture the result code
             $stmt = $dbh->prepare($sql);
             $stmt->bindParam(":sessionid", $sessionid);
-            $result = $stmt->execute();*/
-
+            $result = $stmt->execute();
+            
             // If the query did not run successfully, add an error message to the list
-            if ($httpCode === 500) {
-
+            if ($result === FALSE) {
+                
                 $errors[] = "An unexpected error occurred";
                 $this->debug($stmt->errorInfo());
-
+                
                 // In order to prevent recursive calling of audit log function
                 if (!$suppressLog){
                     $this->auditlog("session error", $stmt->errorInfo());
                 }
-
+                
             } else {
                 
-                $user = $response;
-
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
             }
-
+            
             // Close the connection
             $dbh = NULL;
-
+            
         }
-
+        
         return $user;
-
+        
     }
 
     // Retrieves an existing session from the database for the specified user
@@ -606,20 +599,17 @@ class Application {
             $errors[] = "Missing userid";
             return FALSE;
         }
-
-        // Connect to the database
-        $dbh = $this->getConnection();
-
-        // Construct a SQL statement to perform the insert operation
-        $sql = "SELECT isadmin FROM users WHERE userid = :userid";
-
-        // Run the SQL select and capture the result code
-        $stmt = $dbh->prepare($sql);
-        $stmt->bindParam(":userid", $userid);
-        $result = $stmt->execute();
+        $url = "https://z7ax7vyht3.execute-api.us-east-1.amazonaws.com/default/isadmin?userid=".$userid;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("x-api-key: CeNav9VIAS14a7KKu1tp42r9E7bxBVxM4RrD278Y"));
+        $response  = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         // If the query did not run successfully, add an error message to the list
-        if ($result === FALSE) {
+        if ($httpCode === 500) {
 
             $errors[] = "An unexpected error occurred";
             $this->debug($stmt->errorInfo());
@@ -628,9 +618,9 @@ class Application {
             return FALSE;
 
         } else {
-
-            $row = $stmt->fetch();
-            $isadmin = $row['isadmin'];
+            echo $response;
+            //$row = $stmt->fetch();
+            $isadmin = json_decode($response)->isAdmin;
 
             // Return the isAdmin flag
             return $isadmin == 1;
@@ -666,7 +656,7 @@ class Application {
             $stmt = $dbh->prepare($sql);
             $stmt->bindParam(":username", $username);
             $result = $stmt->execute();
-
+			
             // If the query did not run successfully, add an error message to the list
             if ($result === FALSE) {
 
@@ -698,10 +688,12 @@ class Application {
 
                 } else if ($row['emailvalidated'] == 0) {
 
+					echo "HELOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO2";
                     $errors[] = "Login error. Email not validated. Please check your inbox and/or spam folder.";
 
                 } else {
                     $userid = $row['userid'];
+					echo "HELOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO";
                     $this->newSession($userid, $errors);
                     $this->auditlog("login", "success: $username, $userid");
                 }
@@ -782,7 +774,7 @@ class Application {
         }
 
         // Get the user's ID
-        $userid = $user->usersessionid;
+        $userid = $user['userid'];
 
         // If there is no user ID in the session, then the user is not logged in
         if(empty($userid)) {
@@ -1062,7 +1054,7 @@ class Application {
 
         // Get the user id from the session
         $user = $this->getSessionUser($errors);
-        $userid = $user->usersessionid;
+        $userid = $user['userid'];
         $registrationcode = $user["registrationcode"];
 
         // Validate the user input
@@ -1146,7 +1138,7 @@ class Application {
 
         // Get the user id from the session
         $user = $this->getSessionUser($errors);
-        $userid = $user->usersessionid;
+        $userid = $user['userid'];
 
         // Validate the user input
         if (empty($userid)) {
@@ -1284,7 +1276,7 @@ class Application {
 
             // Get the user id from the session
             $user = $this->getSessionUser($errors);
-            $loggedinuserid = $user->usersessionid;
+            $loggedinuserid = $user['userid'];
             $isadmin = FALSE;
 
             // Check to see if the user really is logged in and really is an admin
@@ -1368,7 +1360,7 @@ class Application {
 
             // Get the user id from the session
             $user = $this->getSessionUser($errors);
-            $loggedinuserid = $user->usersessionid;
+            $loggedinuserid = $user['userid'];
             $isadmin = FALSE;
 
             // Check to see if the user really is logged in and really is an admin
@@ -1662,7 +1654,7 @@ class Application {
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
             // If the query did not run successfully, add an error message to the list
-            if ($result === FALSE) {
+            if ($httpCode === 500) {
 
                 $errors[] = "An unexpected error occurred";
                 $this->debug($stmt->errorInfo());
